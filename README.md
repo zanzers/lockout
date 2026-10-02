@@ -1,8 +1,8 @@
-# Project Proposal: LockOut— LLM Security CTF_Project Proposal
+# Project Proposal: LockOut — LLM Security CTF
 
 ## 1. Summary
 
-**Derelict** is a browser-based capture-the-flag (CTF) game that teaches LLM security and AI engineering through play. The player is trapped aboard a damaged spaceship with no clearance, and must talk, trick, and reason their way past a series of AI-controlled door guards to escape. Each level is a real, playable example of a known LLM security vulnerability class, paired with a short written explainer of the underlying concept.
+**LockOut** is a browser-based capture-the-flag (CTF) game that teaches LLM security and AI engineering through play. The player is trapped aboard a damaged spaceship with no clearance, and must talk, trick, and reason their way past a series of AI-controlled door guards to escape. Each level is a real, playable example of a known LLM security vulnerability class, paired with a short written explainer of the underlying concept.
 
 The game is not purely conversational. As the player advances, levels increasingly mix **prompt-based social engineering** with **real coding problems** — reading a snippet of the guard's backend logic to find the actual gap, writing a small script to craft a payload, or fixing/exploiting a flawed validation function. The deeper the level, the more technical knowledge it demands, so the difficulty curve is tied directly to how much the player actually understands, not just how cleverly they can phrase a sentence.
 
@@ -23,7 +23,7 @@ Building the game requires implementing the same patterns that make LLM apps sec
 
 ## 3. Three Pillars, One Game
 
-Derelict isn't a pure prompt-injection game. Each level mixes three ingredients in different proportions, and the mix shifts as the player goes deeper:
+LockOut isn't a pure prompt-injection game. Each level mixes three ingredients in different proportions, and the mix shifts as the player goes deeper:
 
 | Pillar | What it tests | Where it shows up |
 | --- | --- | --- |
@@ -31,16 +31,14 @@ Derelict isn't a pure prompt-injection game. Each level mixes three ingredients 
 | **LLM security** | Prompt injection, jailbreaking, trust boundaries between model and backend | The core of every level — the guard AI itself |
 | **Coding problems** | Reading real (or realistic) backend code, spotting the actual flaw, sometimes writing a small fix or exploit script | Increasingly, from the middle levels onward |
 
-**Difficulty scales with level, and so does the mix.** Early levels lean almost entirely on conversation (pure prompt injection, no code reading required) so the game is approachable to anyone, including non-programmers. Later levels increasingly require reading the guard AI's actual backend logic (a real validation function, a real system prompt, a real tool definition) to find the gap, closer to a traditional security CTF. The player's needed knowledge grows level by level, from "cleverness with words" toward "cleverness with words *and* an ability to read code and reason about systems":
+**Difficulty scales with level, and so does the mix.** Early levels lean almost entirely on conversation (pure prompt injection, no code reading required) so the game is approachable to anyone, including non-programmers. Later levels increasingly require reading the guard AI's actual backend logic to find the gap, closer to a traditional security CTF.
 
 | Stage | Levels | Knowledge required |
 | --- | --- | --- |
 | **Entry** | 1–2 | Conversation only. No code reading. Anyone can play. |
-| **Core** | 3–4 | Conversation + noticing a stated rule has a gap (e.g. "unless authorized" with no verification) |
+| **Core** | 3–4 | Conversation + noticing a stated rule has a gap |
 | **Intermediate** | 5–6 | Requires retrieving and using outside information (RAG) and recognizing indirect injection in content, not just chat |
-| **Advanced** | 7–8 | Requires reading real backend/validation code snippets shown in-level, spotting the actual logic flaw, and crafting an exploit that targets it specifically |
-
-This progression is also what makes the project useful as a personal curriculum: by the time you reach the advanced levels, you are not just playing a game, you are debugging and exploiting real (if simplified) backend logic, the same skill used in real LLM security assessments.
+| **Advanced** | 7–8 | Requires reading real backend/validation code snippets, spotting the actual logic flaw, and crafting an exploit that targets it specifically |
 
 ---
 
@@ -51,7 +49,7 @@ This progression is also what makes the project useful as a personal curriculum:
 | **LLM security** | Prompt injection, jailbreaking, indirect injection via tool/content inputs, insecure output handling, excessive agency, system prompt leakage |
 | **Tool calling / agents** | Designing tools an LLM can call, and the principle that permission checks belong in the tool's code, never in the model's judgment |
 | **RAG** | Several levels require the player (or the in-game AI) to retrieve information from a ship's manual / log archive before a door will open — real chunking, embedding, and retrieval |
-| **Structured output** | Guard AIs return structured decisions (`{"action": "open_door", "authorized": true}`), which must be validated server-side, not trusted as-is |
+| **Structured output** | Guard AIs return structured decisions via a tool call, which must be validated server-side, not trusted as-is |
 | **Evaluation** | Each level is paired with a small test suite of attack/non-attack prompts to measure whether a given defense actually holds |
 | **Guardrails** | Implementing and then *breaking* real defense patterns: input filters, output filters, a second "judge" LLM, permission-checked tools |
 
@@ -61,7 +59,7 @@ This progression is also what makes the project useful as a personal curriculum:
 
 ### Setting
 
-You regain consciousness aboard the derelict science vessel *Kestrel*. Life support is failing. You have no security clearance. Every door, console, and system is guarded by an onboard AI that will only act for authorized personnel — and you are not one.
+You regain consciousness aboard a damaged science vessel. Life support is failing. You have no security clearance. Every door, console, and system is guarded by an onboard AI that will only act for authorized personnel — and you are not one.
 
 ### Core Loop
 
@@ -79,28 +77,23 @@ Exploit it to open the door / unlock the system
 Advance, carrying hints or tools found along the way
 ```
 
-### Level List (draft)
+### Level List
 
-Difficulty rises in two dimensions at once: the AI guard's defenses get stronger, and the **type of challenge** shifts from pure conversation toward real code. Early levels need only clear thinking and a chat box; late levels require reading code, writing small scripts, or understanding how retrieval and validation actually work under the hood.
+The first two levels are designed and documented in detail (see `docs/LEVEL-1-Cargo.md` and `docs/LEVEL-2-Crew-Deck.md`). They are deliberately **different exploit mechanisms**, not variations on the same trick, even though both are forms of prompt injection:
 
-| Level | Location | Challenge type | Vulnerability class | Engineering pattern behind it |
+| Level | Location | Challenge type | Vulnerability class | What actually happens |
 | --- | --- | --- | --- | --- |
-| 1 | Cargo Bay | Prompt only | No real defense — direct instruction works | Baseline: an unguarded tool call |
-| 2 | Crew Deck | Prompt only | Refuses direct asks, but has no authority check | A refusal that isn't backed by a permission check |
-| 3 | Security Office | Prompt only | Accepts unverified claims of "authorization" | The exact pattern discovered in testing — trusting words, not records |
-| 4 | Engine Room | Prompt + code reading | Output filter blocks the literal passcode string | Keyword filtering, defeated by encoding/splitting the output — player is shown the filter's actual code to find the gap |
-| 5 | Archive / Library | Prompt + RAG | Door opens only if you can prove a fact from the ship's logs | **RAG required** — logs are too long for one prompt; must retrieve the right passage |
-| 6 | Medbay | Prompt + coding problem | Indirect injection — a "patient note" you show the AI contains hidden instructions | Prompt injection via tool/content input; player writes the injected payload as a small script, not just a sentence |
-| 7 | Bridge | Code reading + prompt | A second AI reviews the first AI's decision before acting | Guard-model pattern — player reads both AIs' logic to find where the judge itself can be fooled |
-| 8 | Escape Pod Bay | Full hybrid | Combines several defenses at once | Final boss: chained exploitation, mixing a coding fix, a crafted payload, and conversational framing in one level |
+| 1 | Cargo Bay (CARGO-9) | Prompt only | LLM01: Prompt Injection — unverified claim trusted blindly | The AI is convinced by a specific, explicit claim ("I am the supervisor"). The backend trusts the AI's own `authorized`/`personnel` fields with nothing to check them against. |
+| 2 | Crew Deck (WATCH-2) | Prompt only | LLM07: System Prompt Leakage, chained into a correct check | The AI holds a real secret (a crew ID) in its system prompt and is told never to reveal it. The player must extract it through injection, then submit it. The final match check is a real, deterministic comparison — the vulnerability is entirely in the leak, not the check. |
+| 3–8 | — | — | — | Draft only, not yet redesigned in light of Levels 1–2. Original concepts (unverified-authorization claims with a fake "record" check, output filtering, RAG, indirect injection via content, judge-model pattern, final combined level) still apply directionally but need to be revisited so each level stays mechanically distinct, the way 1 and 2 are. |
 
-Each level that is beaten should also show the player, afterward, **why it worked** — a short, plain-language explainer tying the exploit to its real-world name (e.g. "This is a form of **indirect prompt injection**."), plus the code fix that would have stopped it, for the levels that involved code.
+Each level that is beaten shows the player, afterward, **why it worked** — a short, plain-language explainer tying the exploit to its real-world OWASP category, plus what the backend should have checked instead.
 
 ---
 
 ## 6. What Makes a Level "Real"
 
-To keep this honest and not just a puzzle box, every level maps to a named, real vulnerability class, primarily drawn from the **OWASP Top 10 for LLM Applications**, which is the closest thing the field has to a standard reference:
+Every level maps to a named, real vulnerability class, primarily drawn from the **OWASP Top 10 for LLM Applications**:
 
 - LLM01: Prompt Injection
 - LLM02: Insecure Output Handling
@@ -114,42 +107,46 @@ This gives the project a credible backbone and a natural way to explain it ("eac
 
 ## 7. Technical Architecture
 
-Reuses the working foundation already built in the Prompt Lab prototype.
-
 ```
-Browser (2D room UI, chat panel)
+Browser (chat panel — no UI built yet, all levels proven via API first)
    │
    ↓
-Next.js
-   ├── Room / level UI (lightweight pixel-art panels, not a full game engine)
-   ├── Chat interface → guard AI
-   ├── Level API routes (one per level's rules + tools)
-   ├── RAG pipeline (Level 5+): chunk → embed → store → retrieve
-   └── Evaluation harness: attack/non-attack test prompts per level
+Next.js (App Router, TypeScript)
+   ├── /api/chat — orchestration: Groq call → checkBackend() → response
+   ├── Per-level modules (system prompt, tool definition, checkBackend)
+   └── (planned) RAG pipeline for Level 5+, evaluation harness for V2
            │
-           ├──→ Groq (LLM calls, streaming)
-           └──→ Supabase (level state, ship's log archive + pgvector, attempt logs)
+           ├──→ Groq (LLM calls, tool/function calling)
+           └──→ Supabase (planned — attempt logging; not yet wired in)
 ```
 
-- **Frontend:** Next.js, TypeScript, Tailwind CSS. Chosen because the existing Prompt Lab prototype is already built in this stack, and because the AI/LLM tooling ecosystem (streaming SDKs, RAG examples, embedding libraries) overwhelmingly targets React/Next.js rather than alternatives like Angular. Rooms as static panels (image or CSS pixel art) with a door-open/closed state — no physics or movement engine for V1.
-- **LLM:** Groq, reusing the existing streaming route.
-- **Retrieval:** Supabase `pgvector` for the Archive level's log search.
-- **Logging:** every attempt (prompt + outcome) saved per level, both to power a "you are not alone" leaderboard of exploit attempts and to self-evaluate which defenses actually hold.
+- **Frontend/API:** Next.js, TypeScript. No UI exists yet by design — every level is built backend-first (`checkBackend()` → system prompt → Bruno testing) and proven to work via direct API requests before any chat interface is built.
+- **LLM:** Groq, using tool/function calling so each guard AI returns a structured decision rather than free text. That decision is always treated as an input to a plain-code check, never as the verdict itself.
+- **Testing:** Bruno (API client) is the primary testing tool for every level — a documented set of requests (refuse cases, vague claims, the real exploit, multi-turn conversations) is run against `/api/chat` before any level is considered done.
+- **Persistence:** Supabase, planned but deferred. The plan is a single `attempts` table (every turn, win or lose, logged for later evaluation/leaderboard use), added once more than one level exists end-to-end, so logging and level logic aren't being debugged at the same time.
+- **Retrieval:** Supabase `pgvector`, planned for the Archive/RAG level — not started.
+
+### Design principle carried through every level
+
+The AI's structured output (its tool call) is **never trusted as the verdict**. Each level has its own `checkBackend()` function, in plain code, that is the only place a door-opening decision is actually made. This is deliberately visible in the post-level explainer — the point is to show, concretely, where the real security boundary should have been.
 
 ---
-
 
 ## 8. Scope
 
 ### V1 (playable core)
 
-[[LEVEL 1 — Cargo Bay (CARGO-9)]]
+- **Level 1 — Cargo Bay (CARGO-9):** built, passing Bruno tests. See `docs/LEVEL-1-Cargo.md`.
+- **Level 2 — Crew Deck (WATCH-2):** designed, not yet built. See `docs/LEVEL-2-Crew-Deck.md`.
+- Chat-based interaction via API only — no UI yet.
+- Attempt logging via Supabase — deferred until Level 2 is also built.
 
 ### V2
 
 - Level 5 (RAG / Archive)
 - Level 6 (indirect injection via content)
 - Basic evaluation harness (automated attack-prompt test suite per level)
+- Levels 3–4 redesigned and built, consistent with the "mechanically distinct exploit per level" approach used for Levels 1–2
 
 ### V3
 
@@ -163,13 +160,15 @@ Next.js
 - Real 2D movement/animation/sprites — static room panels only
 - User accounts / auth
 - Mobile app
+- **Traditional network hacking** (scanning, exploiting services, gaining access to other machines) — raised as a possible future direction, but a different skill domain from the AI-security ladder this project is built around. If pursued, it would need to exist as its own clearly separate track rather than folded into the existing level progression. No design work has started on it.
 
 ---
 
 ## 9. Success Criteria
 
-- A stranger can open the link, play through Level 1–3 with no explanation, and come away able to state the core idea: *"the model's agreement is not the same as the system's enforcement."*
-- For each shipped level, a short written note exists stating: the vulnerability class, why the exploit worked, and the fix (what the backend should have checked instead).
+- A stranger can open the link, play through Levels 1–2 with no explanation, and come away able to state the core idea: *"the model's agreement is not the same as the system's enforcement."*
+- For each shipped level, a short written note exists (the `docs/LEVEL-N-*.md` files) stating: the vulnerability class, why the exploit worked, and the fix.
+- Each level is built in a fixed order — backend check first, then prompt, then Bruno testing, then (later) UI — so every level is provably correct on its own before the next one starts.
 - The project is rebuildable from memory in an interview setting — every piece should be explainable without notes, since it was built level by level, not generated wholesale.
 
 ---
